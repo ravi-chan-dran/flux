@@ -56,8 +56,13 @@ htmlcov/
 logs/
 
 # Storage
+# Ignore runtime generated papers
 storage/papers/*
 !storage/papers/.gitkeep
+
+# But track example/demo papers (optional)
+# Uncomment the line below to track example papers:
+# !storage/examples/
 
 # Temporary Files
 *.tmp
