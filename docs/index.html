@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLUX Documentation Portal</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, var(--background-light) 0%, var(--background-lighter) 100%);
+            border-radius: 1rem;
+            margin-bottom: 3rem;
+        }
+        
+        .hero h1 {
+            font-size: 4rem;
+            margin: 0;
+            text-shadow: 0 0 30px rgba(6, 182, 212, 0.6);
+            border: none;
+        }
+        
+        .hero p {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
+        
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .doc-card {
+            background: var(--background-light);
+            border: 2px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .doc-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(6, 182, 212, 0.3);
+        }
+        
+        .doc-card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .doc-card h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+            border: none;
+        }
+        
+        .doc-card p {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        
+        .doc-card-meta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        
+        .doc-card-tag {
+            background: var(--background-lighter);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+            background: var(--background-light);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        
+        .quick-links {
+            background: var(--background-light);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .quick-links h2 {
+            margin-top: 0;
+        }
+        
+        .quick-links ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .quick-links li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .quick-links li:last-child {
+            border-bottom: none;
+        }
+        
+        .quick-links a {
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .quick-links a:hover {
+            color: var(--primary);
+        }
+        
+        .quick-links-icon {
+            font-size: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🌊 FLUX</h1>
+            <p>Flow-based Learning Understanding eXchange - Documentation Portal</p>
+        </div>
+    </header>
+
+    <main>
+        <div class="hero fade-in">
+            <div class="doc-card-icon">📚</div>
+            <h1>Documentation</h1>
+            <p>Comprehensive design documentation for the FLUX multi-agent research system</p>
+        </div>
+
+        <div class="stats fade-in">
+            <div class="stat-card">
+                <div class="stat-number">6</div>
+                <div class="stat-label">AI Agents</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Research Phases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3+</div>
+                <div class="stat-label">Data Sources</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Documented</div>
+            </div>
+        </div>
+
+        <h2>📖 Core Documentation</h2>
+        <div class="doc-grid fade-in">
+            <a href="ARCHITECTURE.html" class="doc-card" style="text-decoration: none;">
+                <div class="doc-card-icon">🏗️</div>
+                <h2>Architecture</h2>
+                <p>High-level system architecture, component design, and technology stack</p>
+                <div class="doc-card-meta">
+                    <span class="doc-card-tag">High-Level</span>
+                    <span class="doc-card-tag">Components</span>
+                    <span class="doc-card-tag">Tech Stack</span>
+                </div>
+            </a>
+
+            <a href="TECHNICAL_DESIGN.html" class="doc-card" style="text-decoration: none;">
+                <div class="doc-card-icon">⚙️</div>
+                <h2>Technical Design</h2>
+                <p>Low-level implementation details, agent system, state management, and API design</p>
+                <div class="doc-card-meta">
+                    <span class="doc-card-tag">Implementation</span>
+                    <span class="doc-card-tag">Agents</span>
+                    <span class="doc-card-tag">APIs</span>
+                </div>
+            </a>
+
+            <a href="SEQUENCE_DIAGRAMS.html" class="doc-card" style="text-decoration: none;">
+                <div class="doc-card-icon">📊</div>
+                <h2>Sequence Diagrams</h2>
+                <p>Visual flow diagrams showing interactions between components</p>
+                <div class="doc-card-meta">
+                    <span class="doc-card-tag">Diagrams</span>
+                    <span class="doc-card-tag">Flows</span>
+                    <span class="doc-card-tag">Visual</span>
+                </div>
+            </a>
+
+            <a href="FEATURES.html" class="doc-card" style="text-decoration: none;">
+                <div class="doc-card-icon">✨</div>
+                <h2>Features</h2>
+                <p>Complete feature documentation covering core capabilities and future roadmap</p>
+                <div class="doc-card-meta">
+                    <span class="doc-card-tag">Features</span>
+                    <span class="doc-card-tag">Capabilities</span>
+                    <span class="doc-card-tag">Roadmap</span>
+                </div>
+            </a>
+        </div>
+
+        <h2>📝 Additional Resources</h2>
+        <div class="quick-links fade-in">
+            <h3>Markdown Documentation</h3>
+            <ul>
+                <li>
+                    <a href="ARCHITECTURE.md">
+                        <span class="quick-links-icon">📄</span>
+                        <span>ARCHITECTURE.md - System architecture (Markdown)</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="TECHNICAL_DESIGN.md">
+                        <span class="quick-links-icon">📄</span>
+                        <span>TECHNICAL_DESIGN.md - Technical implementation (Markdown)</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="SEQUENCE_DIAGRAMS.md">
+                        <span class="quick-links-icon">📄</span>
+                        <span>SEQUENCE_DIAGRAMS.md - Interaction diagrams (Markdown)</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="FEATURES.md">
+                        <span class="quick-links-icon">📄</span>
+                        <span>FEATURES.md - Feature documentation (Markdown)</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="quick-links fade-in">
+            <h3>Related Documentation</h3>
+            <ul>
+                <li>
+                    <a href="../README.md">
+                        <span class="quick-links-icon">📖</span>
+                        <span>README.md - Project overview and setup</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="../CHANGELOG.md">
+                        <span class="quick-links-icon">📋</span>
+                        <span>CHANGELOG.md - Version history</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="../AWS_THROTTLING_GUIDE.md">
+                        <span class="quick-links-icon">⚡</span>
+                        <span>AWS_THROTTLING_GUIDE.md - Throttling fix guide</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="../THROTTLING_FIX_SUMMARY.md">
+                        <span class="quick-links-icon">✅</span>
+                        <span>THROTTLING_FIX_SUMMARY.md - Quick fix summary</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card fade-in">
+            <h2>🚀 Quick Start</h2>
+            <p>To get started with FLUX:</p>
+            <ol>
+                <li>Clone the repository: <code>git clone &lt;repo-url&gt;</code></li>
+                <li>Set up AWS credentials: <code>aws configure --profile default</code></li>
+                <li>Configure environment: <code>cp backend/.env.example backend/.env</code></li>
+                <li>Install dependencies: <code>python start.py</code></li>
+                <li>Open browser: <code>http://localhost:3000</code></li>
+            </ol>
+        </div>
+
+        <div class="card fade-in">
+            <h2>📊 Documentation Structure</h2>
+            <pre><code>docs/
+├── index.html                  # This page
+├── styles.css                  # Styling
+├── ARCHITECTURE.md/.html       # System architecture
+├── TECHNICAL_DESIGN.md/.html   # Implementation details
+├── SEQUENCE_DIAGRAMS.md/.html  # Interaction diagrams
+└── FEATURES.md/.html           # Feature documentation</code></pre>
+        </div>
+
+        <div class="card fade-in">
+            <h2>🔗 External Links</h2>
+            <ul>
+                <li><a href="http://localhost:3000" target="_blank">Frontend (http://localhost:3000)</a></li>
+                <li><a href="http://localhost:8000/docs" target="_blank">Backend API Docs (http://localhost:8000/docs)</a></li>
+                <li><a href="https://docs.aws.amazon.com/bedrock/" target="_blank">AWS Bedrock Documentation</a></li>
+                <li><a href="https://python.langchain.com/docs/langgraph" target="_blank">LangGraph Documentation</a></li>
+                <li><a href="https://nextjs.org/docs" target="_blank">Next.js Documentation</a></li>
+            </ul>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 FLUX - Flow-based Learning Understanding eXchange</p>
+            <p class="text-muted">Multi-agent AI research system powered by orbital iteration</p>
+        </div>
+    </footer>
+
+    <script>
+        // Add fade-in animation on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
+

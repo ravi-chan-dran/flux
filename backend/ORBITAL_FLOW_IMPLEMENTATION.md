@@ -349,7 +349,7 @@ Predefined quality score sequences:
 
 Automatically sets test environment variables:
 - `LOG_LEVEL=WARNING`
-- `MAX_ITERATIONS=3`
+- `MAX_ITERATIONS=1`
 - `QUALITY_THRESHOLD=8.0`
 - Mock AWS credentials if not set
 

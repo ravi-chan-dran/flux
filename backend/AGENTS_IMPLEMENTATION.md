@@ -566,10 +566,10 @@ All agents use environment variables from `.env`:
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 AWS_REGION=us-east-1
-AWS_BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
+AWS_BEDROCK_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
 
 # Research parameters
-MAX_ITERATIONS=3
+MAX_ITERATIONS=1
 QUALITY_THRESHOLD=8.0
 IMPROVEMENT_THRESHOLD=0.5
 

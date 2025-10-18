@@ -1,0 +1,17 @@
+
+> flux-frontend@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.0
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1375ms
+(node:30106) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ○ Compiling / ...
+ ✓ Compiled / in 1158ms (470 modules)
+ HEAD / 200 in 1252ms
+ ✓ Compiled in 221ms (237 modules)
+ ✓ Compiled in 239ms (237 modules)

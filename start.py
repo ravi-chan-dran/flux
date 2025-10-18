@@ -123,8 +123,10 @@ def setup_backend(platform_info):
             print_color("⚠️  .env file not found. Creating from .env.example...", Colors.YELLOW)
             import shutil
             shutil.copy(str(env_example), str(env_file))
-            print_color("⚠️  IMPORTANT: Edit backend/.env with your AWS credentials!", Colors.RED)
-            print_color("   Press Enter to continue after editing .env...", Colors.YELLOW)
+            print_color("⚠️  IMPORTANT: Configure AWS profile before starting!", Colors.RED)
+            print_color("   Run: aws configure --profile default", Colors.YELLOW)
+            print_color("   Then set AWS_PROFILE=default in backend/.env", Colors.YELLOW)
+            print_color("   Press Enter to continue after configuring AWS...", Colors.YELLOW)
             input()
         else:
             print_color("⚠️  No .env or .env.example found", Colors.YELLOW)

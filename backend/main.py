@@ -14,12 +14,14 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from sse_starlette.sse import EventSourceResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from loguru import logger
 import sys
 
 from flux_core.graph.research_graph import stream_research
+from flux_core.graph.state import create_initial_state
 from flux_core.tools.storage import (
     ensure_storage_dirs,
     save_paper,
@@ -47,7 +49,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting FLUX Research Agent backend...")
     logger.info(f"Log level: {log_level}")
     logger.info(f"AWS Region: {os.getenv('AWS_REGION', 'us-east-1')}")
-    logger.info(f"Max Iterations: {os.getenv('MAX_ITERATIONS', '3')}")
+    logger.info(f"Max Iterations: {os.getenv('MAX_ITERATIONS', '1')}")
     logger.info(f"Quality Threshold: {os.getenv('QUALITY_THRESHOLD', '8.0')}")
     
     # Create storage directories
@@ -104,12 +106,12 @@ async def health_check() -> dict[str, Any]:
 async def get_config() -> dict[str, Any]:
     """Get current configuration (non-sensitive values)."""
     return {
-        "max_iterations": int(os.getenv("MAX_ITERATIONS", "3")),
+        "max_iterations": int(os.getenv("MAX_ITERATIONS", "1")),
         "quality_threshold": float(os.getenv("QUALITY_THRESHOLD", "8.0")),
         "improvement_threshold": float(os.getenv("IMPROVEMENT_THRESHOLD", "0.5")),
         "log_level": log_level,
         "aws_region": os.getenv("AWS_REGION", "us-east-1"),
-        "model_id": os.getenv("AWS_BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0"),
+        "model_id": os.getenv("AWS_BEDROCK_MODEL_ID", "us.anthropic.claude-3-5-sonnet-20241022-v2:0"),
     }
 
 
@@ -177,7 +179,7 @@ async def start_research(
 
 
 @app.get("/api/research/{research_id}/stream")
-async def stream_research_progress(research_id: str):
+async def stream_research_progress(research_id: str, question: str):
     """
     Stream research progress via Server-Sent Events (SSE).
     
@@ -185,73 +187,91 @@ async def stream_research_progress(research_id: str):
     
     Args:
         research_id: Unique research identifier
+        question: Research question (passed as query parameter)
     
     Returns:
-        StreamingResponse with SSE events
+        EventSourceResponse with SSE events
     """
-    logger.info(f"Streaming research: {research_id}")
+    logger.info(f"🌊 Starting SSE stream for research: {research_id}")
+    logger.info(f"📝 Question: {question}")
     
     async def event_generator():
         """Generate SSE events from research workflow."""
+        last_ping = asyncio.get_event_loop().time()
+        
         try:
-            # Extract question from research_id or get from query params
-            # For now, we'll use a placeholder - in production, store this in a database
-            question = "Research question placeholder"  # TODO: Store/retrieve from session
+            # Send connection established event
+            yield {
+                "event": "connected",
+                "data": json.dumps({
+                    "research_id": research_id,
+                    "status": "connected",
+                    "timestamp": datetime.utcnow().isoformat(),
+                })
+            }
             
             # Configuration from environment
             config = {
-                "max_iterations": int(os.getenv("MAX_ITERATIONS", "3")),
+                "max_iterations": int(os.getenv("MAX_ITERATIONS", "1")),
                 "quality_threshold": float(os.getenv("QUALITY_THRESHOLD", "8.0")),
                 "improvement_threshold": float(os.getenv("IMPROVEMENT_THRESHOLD", "0.5")),
             }
             
             # Stream research updates
-            async for state_update in stream_research(question, research_id, **config):
-                # Extract the state from the update
-                # LangGraph returns dict with node name as key
-                for node_name, state in state_update.items():
-                    event_data = {
+            async for event in stream_research(question, research_id, **config):
+                # Send the event
+                yield {
+                    "event": event.get("event_type", "message"),
+                    "data": json.dumps({
+                        **event,
                         "research_id": research_id,
-                        "node": node_name,
-                        "phase": state.get("phase", "unknown"),
-                        "iteration": state.get("iteration", 0),
-                        "quality_score": state.get("quality_score", 0.0),
-                        "next_action": state.get("next_action", ""),
                         "timestamp": datetime.utcnow().isoformat(),
+                    })
+                }
+                
+                last_ping = asyncio.get_event_loop().time()
+                
+                # Small delay for better streaming experience
+                await asyncio.sleep(0.05)
+                
+                # Send ping every 30 seconds to keep connection alive
+                current_time = asyncio.get_event_loop().time()
+                if current_time - last_ping > 30:
+                    yield {
+                        "event": "ping",
+                        "data": json.dumps({"timestamp": datetime.utcnow().isoformat()})
                     }
-                    
-                    # Get latest message if available
-                    messages = state.get("messages", [])
-                    if messages:
-                        latest = messages[-1]
-                        event_data["message"] = latest.get("message", "")
-                        event_data["agent"] = latest.get("agent", "")
-                        event_data["emoji"] = latest.get("emoji", "")
-                    
-                    # Send SSE event
-                    yield f"data: {json.dumps(event_data)}\n\n"
-                    
-                    # Small delay for better streaming experience
-                    await asyncio.sleep(0.1)
+                    last_ping = current_time
             
-            # Final event
-            yield f"data: {json.dumps({'status': 'complete', 'research_id': research_id})}\n\n"
+            # Final completion event
+            yield {
+                "event": "complete",
+                "data": json.dumps({
+                    "research_id": research_id,
+                    "status": "complete",
+                    "timestamp": datetime.utcnow().isoformat(),
+                })
+            }
+            
+            logger.info(f"✅ Research stream completed: {research_id}")
             
         except Exception as e:
-            logger.error(f"Error streaming research {research_id}: {e}")
-            error_event = {
-                "status": "error",
-                "research_id": research_id,
-                "error": str(e),
+            logger.error(f"❌ Error streaming research {research_id}: {e}", exc_info=True)
+            yield {
+                "event": "error",
+                "data": json.dumps({
+                    "research_id": research_id,
+                    "status": "error",
+                    "error": str(e),
+                    "timestamp": datetime.utcnow().isoformat(),
+                })
             }
-            yield f"data: {json.dumps(error_event)}\n\n"
     
-    return StreamingResponse(
+    return EventSourceResponse(
         event_generator(),
-        media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
         }
     )
 

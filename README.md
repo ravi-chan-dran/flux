@@ -320,14 +320,26 @@ Create a `.env` file in the `backend/` directory with these variables:
 #### **Required Variables**
 
 ```bash
-# AWS Bedrock Configuration
-AWS_ACCESS_KEY_ID=your_access_key_here
-AWS_SECRET_ACCESS_KEY=your_secret_key_here
-AWS_REGION=us-east-1
-AWS_BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
+# AWS Configuration
+AWS_PROFILE=default                    # Your AWS profile name from ~/.aws/credentials
+AWS_REGION=us-east-1                   # AWS region with Bedrock access
+AWS_BEDROCK_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0  # Use inference profile
 ```
 
+**AWS Profile Setup:**
+1. Install AWS CLI: `pip install awscli` or download from [AWS](https://aws.amazon.com/cli/)
+2. Configure your profile: `aws configure --profile default`
+3. Enter your AWS Access Key ID and Secret Access Key
+4. Your credentials will be stored securely in `~/.aws/credentials`
+5. Set `AWS_PROFILE=default` in your `.env` file
+
 **Note:** You need an AWS account with Bedrock access. Claude 3.5 Sonnet must be enabled in your region.
+
+**Alternative:** If you cannot use AWS profiles, you can set explicit credentials (not recommended):
+```bash
+# AWS_ACCESS_KEY_ID=your_access_key_here
+# AWS_SECRET_ACCESS_KEY=your_secret_key_here
+```
 
 #### **Optional Variables**
 
@@ -336,7 +348,7 @@ AWS_BEDROCK_MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
 TAVILY_API_KEY=your_tavily_key  # For web search
 
 # Research Configuration (Optional - defaults shown)
-MAX_ITERATIONS=3                 # Maximum orbital iterations
+MAX_ITERATIONS=1                 # Maximum orbital iterations (1 = single pass, faster & cheaper)
 QUALITY_THRESHOLD=8.0           # Quality score threshold (0-10)
 IMPROVEMENT_THRESHOLD=0.5       # Minimum improvement per iteration
 
@@ -441,6 +453,65 @@ The launcher scripts (`start.py`, `start.sh`, `start.bat`) handle these differen
 
 ---
 
+## 🧹 **Cleanup Scripts**
+
+Need to stop all FLUX processes? We've got you covered!
+
+### **Quick Cleanup**
+
+```bash
+# Recommended - Works on Mac, Linux, Windows
+python3 cleanup.py
+
+# Mac/Linux only
+./cleanup.sh
+```
+
+### **What It Does**
+
+- ✅ Finds all processes on ports **8000** (backend) and **3000** (frontend)
+- ✅ Shows process details before killing them
+- ✅ Kills all FLUX-related processes (Python, Uvicorn, Next.js)
+- ✅ Verifies cleanup and shows final status
+- ✅ Provides colorized output with emojis
+
+### **When to Use**
+
+- 🔧 Before restarting FLUX
+- 🔄 When ports are already in use
+- 🛑 When processes are stuck
+- 🧪 Before running tests
+- 🚀 Before deployment
+
+### **Sample Output**
+
+```
+╔════════════════════════════════════════╗
+║  FLUX Project Cleanup Script          ║
+╚════════════════════════════════════════╝
+
+🔍 Checking port 8000 (Backend (FastAPI))...
+Found 2 process(es) on port 8000:
+  PID 95980: python main.py
+  PID 96005: uvicorn
+
+🔨 Killing processes on port 8000...
+✓ Killed PID 95980
+✓ Killed PID 96005
+✓ Port 8000 is now free
+
+✓ Port 3000: FREE
+✓ No FLUX processes running
+
+╔════════════════════════════════════════╗
+║  Cleanup Complete! ✨                 ║
+╚════════════════════════════════════════╝
+```
+
+📖 **Full documentation:** See [`CLEANUP_GUIDE.md`](./CLEANUP_GUIDE.md)
+
+---
+
 ## 🐛 **Troubleshooting**
 
 ### **Windows Issues**
@@ -502,10 +573,15 @@ sudo dnf install python3.11
 <details>
 <summary>AWS Credentials Error</summary>
 
-Ensure `.env` file exists in `backend/` with valid AWS credentials:
+Ensure `.env` file exists in `backend/` with valid AWS profile:
 ```bash
-AWS_ACCESS_KEY_ID=your_key
-AWS_SECRET_ACCESS_KEY=your_secret
+AWS_PROFILE=default
+AWS_REGION=us-east-1
+```
+
+If profile is not configured, run:
+```bash
+aws configure --profile default
 ```
 
 Verify Bedrock access in your AWS region.

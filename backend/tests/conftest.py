@@ -272,7 +272,7 @@ def set_test_env():
     """Set environment variables for testing."""
     # Set test environment variables
     os.environ.setdefault("LOG_LEVEL", "WARNING")
-    os.environ.setdefault("MAX_ITERATIONS", "3")
+    os.environ.setdefault("MAX_ITERATIONS", "1")
     os.environ.setdefault("QUALITY_THRESHOLD", "8.0")
     os.environ.setdefault("IMPROVEMENT_THRESHOLD", "0.5")
     

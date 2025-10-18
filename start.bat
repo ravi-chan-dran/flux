@@ -69,8 +69,10 @@ if not exist ".env" (
         echo [WARNING] .env file not found. Creating from .env.example...
         copy .env.example .env
         echo.
-        echo [IMPORTANT] Edit backend\.env with your AWS credentials!
-        echo Press any key to continue after editing .env...
+        echo [IMPORTANT] Configure AWS profile before starting!
+        echo Run: aws configure --profile default
+        echo Then set AWS_PROFILE=default in backend\.env
+        echo Press any key to continue after configuring AWS...
         pause >nul
     ) else (
         echo [WARNING] No .env or .env.example found

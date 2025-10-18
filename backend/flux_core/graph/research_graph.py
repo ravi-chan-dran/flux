@@ -3,6 +3,8 @@ LangGraph Orbital Research Flow
 Implements the iterative research workflow through specialized agents.
 """
 
+import os
+import asyncio
 from typing import Any, Literal
 from loguru import logger
 
@@ -285,6 +287,11 @@ async def confluence_node(state: ResearchState) -> ResearchState:
         # Update state
         state["paper_draft"] = paper
         state["phase"] = "complete"
+        
+        # Ensure stop_reason is set for paper saving
+        if not state.get("stop_reason"):
+            state["stop_reason"] = "paper_complete"
+        
         state["messages"].append(
             confluence_agent.format_message(
                 f"Paper complete: {len(paper)} characters",
@@ -303,6 +310,9 @@ async def confluence_node(state: ResearchState) -> ResearchState:
         logger.error(f"✍️ The Confluence error: {e}")
         state["phase"] = "complete"
         state["paper_draft"] = f"# Research Paper\n\nError during synthesis: {e}"
+        # Ensure stop_reason is set even on error
+        if not state.get("stop_reason"):
+            state["stop_reason"] = "paper_complete_with_errors"
         return state
 
 
@@ -460,19 +470,24 @@ async def run_research(question: str, research_id: str, **config) -> ResearchSta
 
 async def stream_research(question: str, research_id: str, **config):
     """
-    Stream research workflow updates.
+    Stream research workflow updates with formatted events.
     
     Args:
         question: Research question
         research_id: Unique identifier
-        **config: Optional configuration
+        **config: Optional configuration (max_iterations, quality_threshold, etc.)
     
     Yields:
-        State updates as the graph executes
+        Formatted event dictionaries for SSE streaming
     """
     from flux_core.graph.state import create_initial_state
+    from flux_core.tools.storage import save_paper
     
-    logger.info(f"Streaming research: {question}")
+    logger.info(f"🌊 Streaming research: {question}")
+    
+    # Get agent invocation delay from environment (default: 2 seconds)
+    agent_delay = float(os.getenv("AGENT_INVOCATION_DELAY", "2"))
+    logger.info(f"Agent invocation delay: {agent_delay}s (to avoid AWS throttling)")
     
     # Create initial state
     state = create_initial_state(
@@ -483,12 +498,109 @@ async def stream_research(question: str, research_id: str, **config):
         improvement_threshold=config.get("improvement_threshold"),
     )
     
+    # Yield initial state event
+    yield {
+        "event_type": "research_started",
+        "phase": "initialize",
+        "iteration": 0,
+        "max_iterations": state["max_iterations"],
+        "quality_threshold": state["quality_threshold"],
+        "message": f"Starting research: {question}",
+    }
+    
     # Create graph
     graph = create_research_graph()
     
+    previous_iteration = -1
+    
     # Stream execution
     async for state_update in graph.astream(state):
-        yield state_update
+        # LangGraph yields dict with node name as key
+        for node_name, updated_state in state_update.items():
+            # Extract latest message
+            messages = updated_state.get("messages", [])
+            latest_message = messages[-1] if messages else {}
+            
+            # Build event data
+            event = {
+                "event_type": "agent_message",
+                "node": node_name,
+                "phase": updated_state.get("phase", "unknown"),
+                "iteration": updated_state.get("iteration", 0),
+                "quality_score": updated_state.get("quality_score", 0.0),
+                "next_action": updated_state.get("next_action", ""),
+            }
+            
+            # Add message details if available
+            if latest_message:
+                event.update({
+                    "agent": latest_message.get("agent", ""),
+                    "emoji": latest_message.get("emoji", ""),
+                    "message": latest_message.get("message", ""),
+                    "message_type": latest_message.get("message_type", ""),
+                })
+                
+                # Add metadata if present
+                if "metadata" in latest_message:
+                    event["metadata"] = latest_message["metadata"]
+            
+            # Check for iteration increment
+            current_iteration = updated_state.get("iteration", 0)
+            if current_iteration > previous_iteration:
+                # Yield iteration summary
+                quality_history = updated_state.get("quality_history", [])
+                improvement = 0.0
+                if len(quality_history) >= 2:
+                    improvement = quality_history[-1] - quality_history[-2]
+                
+                yield {
+                    "event_type": "iteration_complete",
+                    "iteration": previous_iteration,
+                    "new_iteration": current_iteration,
+                    "quality_score": updated_state.get("quality_score", 0.0),
+                    "quality_improvement": improvement,
+                    "quality_history": quality_history,
+                    "message": f"Orbit {current_iteration} initiated",
+                }
+                previous_iteration = current_iteration
+            
+            # Yield agent event
+            yield event
+            
+            # Add delay after each agent invocation to avoid AWS throttling
+            # Skip delay for flow_master as it doesn't call Bedrock
+            if node_name != "flow_master" and agent_delay > 0:
+                logger.debug(f"Waiting {agent_delay}s before next agent invocation...")
+                await asyncio.sleep(agent_delay)
+            
+            # Check for completion
+            if updated_state.get("stop_reason"):
+                # Save paper if completed
+                paper_draft = updated_state.get("paper_draft", "")
+                if paper_draft:
+                    try:
+                        await save_paper(
+                            research_id=research_id,
+                            state=updated_state,
+                        )
+                        logger.info(f"📄 Paper saved: {research_id}")
+                    except Exception as e:
+                        logger.error(f"Failed to save paper: {e}")
+                
+                # Yield final summary
+                yield {
+                    "event_type": "research_complete",
+                    "research_id": research_id,
+                    "phase": "complete",
+                    "iteration": updated_state.get("iteration", 0),
+                    "total_iterations": updated_state.get("iteration", 0) + 1,
+                    "final_quality_score": updated_state.get("quality_score", 0.0),
+                    "quality_history": updated_state.get("quality_history", []),
+                    "stop_reason": updated_state.get("stop_reason", "complete"),
+                    "total_tokens": updated_state.get("total_tokens_used", 0),
+                    "total_cost": updated_state.get("total_cost", 0.0),
+                    "message": f"Research complete: {updated_state.get('stop_reason', 'complete')}",
+                }
     
-    logger.info(f"Research streaming complete: {research_id}")
+    logger.info(f"✅ Research streaming complete: {research_id}")
 

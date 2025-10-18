@@ -64,7 +64,7 @@ def create_initial_state(
     Args:
         question: The research question to investigate
         research_id: Unique identifier for this research session
-        max_iterations: Maximum iterations (defaults to env var MAX_ITERATIONS or 3)
+        max_iterations: Maximum iterations (defaults to env var MAX_ITERATIONS or 1)
         quality_threshold: Quality threshold (defaults to env var QUALITY_THRESHOLD or 8.0)
         improvement_threshold: Improvement threshold (defaults to env var IMPROVEMENT_THRESHOLD or 0.5)
     
@@ -74,7 +74,7 @@ def create_initial_state(
     
     # Read configuration from environment variables with fallbacks
     if max_iterations is None:
-        max_iterations = int(os.getenv("MAX_ITERATIONS", "3"))
+        max_iterations = int(os.getenv("MAX_ITERATIONS", "1"))
     
     if quality_threshold is None:
         quality_threshold = float(os.getenv("QUALITY_THRESHOLD", "8.0"))

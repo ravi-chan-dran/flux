@@ -213,6 +213,48 @@ class BaseAgent(ABC):
         logger.debug(f"{self.name} formatted message: {message_type}")
         return message
     
+    def format_stream_message(
+        self,
+        message: str,
+        phase: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Format a message for streaming with phase information.
+        
+        This creates streaming-friendly messages that include the current
+        research phase and agent-specific metadata for real-time updates.
+        
+        Args:
+            message: The actual response text (conversational, real-time friendly)
+            phase: Current phase name (e.g., "hypotheses", "research", "critique")
+            metadata: Agent-specific data like sources, hypotheses, quality_score
+        
+        Returns:
+            Dict with agent name, message, phase, and metadata for streaming
+        
+        Example:
+            agent.format_stream_message(
+                message="Found 5 relevant research papers",
+                phase="research",
+                metadata={"sources": sources_list}
+            )
+        """
+        stream_msg = {
+            "agent": self.name,
+            "emoji": self.emoji,
+            "color": self.color,
+            "message": message,
+            "phase": phase,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        
+        if metadata:
+            stream_msg["metadata"] = metadata
+        
+        logger.debug(f"{self.name} formatted stream message for phase: {phase}")
+        return stream_msg
+    
     def get_conversation_history(self) -> list[dict[str, Any]]:
         """
         Get the conversation history for this agent.

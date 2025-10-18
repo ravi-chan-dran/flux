@@ -65,7 +65,7 @@ Required environment variables:
 Optional configuration:
 - `LOG_LEVEL` - Logging level (default: INFO)
 - `CORS_ORIGINS` - Comma-separated CORS origins (default: http://localhost:3000)
-- `MAX_ITERATIONS` - Maximum research iterations (default: 3)
+- `MAX_ITERATIONS` - Maximum research iterations (default: 1)
 - `QUALITY_THRESHOLD` - Quality score threshold (default: 8.0)
 - `IMPROVEMENT_THRESHOLD` - Improvement threshold (default: 0.5)
 

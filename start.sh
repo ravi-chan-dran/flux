@@ -98,8 +98,10 @@ if [ ! -f ".env" ]; then
     if [ -f ".env.example" ]; then
         print_color "⚠️  .env file not found. Creating from .env.example..." "$YELLOW"
         cp .env.example .env
-        print_color "⚠️  IMPORTANT: Edit backend/.env with your AWS credentials!" "$RED"
-        print_color "   Press Enter to continue after editing .env..." "$YELLOW"
+        print_color "⚠️  IMPORTANT: Configure AWS profile before starting!" "$RED"
+        print_color "   Run: aws configure --profile default" "$YELLOW"
+        print_color "   Then set AWS_PROFILE=default in backend/.env" "$YELLOW"
+        print_color "   Press Enter to continue after configuring AWS..." "$YELLOW"
         read
     else
         print_color "⚠️  No .env or .env.example found" "$YELLOW"

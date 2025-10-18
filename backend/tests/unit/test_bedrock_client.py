@@ -12,12 +12,18 @@ from flux_core.tools.bedrock_client import BedrockClient, BedrockClientError
 
 
 @pytest.fixture
-def mock_aws_credentials(monkeypatch):
-    """Mock AWS credentials in environment."""
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test_access_key")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test_secret_key")
+def mock_aws_profile(monkeypatch):
+    """Mock AWS profile in environment."""
+    monkeypatch.setenv("AWS_PROFILE", "test-profile")
     monkeypatch.setenv("AWS_REGION", "us-east-1")
-    monkeypatch.setenv("AWS_BEDROCK_MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0")
+    monkeypatch.setenv("AWS_BEDROCK_MODEL_ID", "us.anthropic.claude-3-5-sonnet-20241022-v2:0")
+
+
+@pytest.fixture
+def mock_boto3_session():
+    """Create a mock boto3 session."""
+    with patch("flux_core.tools.bedrock_client.boto3.Session") as mock_session:
+        yield mock_session
 
 
 @pytest.fixture
@@ -30,53 +36,64 @@ def mock_boto3_client():
 class TestBedrockClientInitialization:
     """Tests for BedrockClient initialization."""
     
-    def test_initialization_with_env_vars(self, mock_aws_credentials, mock_boto3_client):
-        """Test successful initialization using environment variables."""
+    def test_initialization_with_aws_profile(self, mock_aws_profile, mock_boto3_session):
+        """Test successful initialization using AWS profile."""
+        mock_bedrock = Mock()
+        mock_session_instance = Mock()
+        mock_session_instance.client.return_value = mock_bedrock
+        mock_boto3_session.return_value = mock_session_instance
+        
+        client = BedrockClient()
+        
+        assert client.profile_name == "test-profile"
+        assert client.region_name == "us-east-1"
+        assert client.model_id == "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+        assert client.client == mock_bedrock
+        
+        mock_boto3_session.assert_called_once_with(
+            profile_name="test-profile",
+            region_name="us-east-1",
+        )
+        mock_session_instance.client.assert_called_once_with(service_name="bedrock-runtime")
+    
+    def test_initialization_with_explicit_profile(self, mock_boto3_session):
+        """Test initialization with explicitly provided profile."""
+        mock_bedrock = Mock()
+        mock_session_instance = Mock()
+        mock_session_instance.client.return_value = mock_bedrock
+        mock_boto3_session.return_value = mock_session_instance
+        
+        client = BedrockClient(
+            profile_name="custom-profile",
+            region_name="us-west-2",
+            model_id="custom-model-id",
+        )
+        
+        assert client.profile_name == "custom-profile"
+        assert client.region_name == "us-west-2"
+        assert client.model_id == "custom-model-id"
+        
+        mock_boto3_session.assert_called_once_with(
+            profile_name="custom-profile",
+            region_name="us-west-2",
+        )
+    
+    def test_initialization_without_profile_uses_default_chain(self, mock_boto3_client):
+        """Test that initialization without profile uses default credential chain."""
         mock_bedrock = Mock()
         mock_boto3_client.return_value = mock_bedrock
         
         client = BedrockClient()
         
-        assert client.aws_access_key_id == "test_access_key"
-        assert client.aws_secret_access_key == "test_secret_key"
-        assert client.region_name == "us-east-1"
-        assert client.model_id == "anthropic.claude-3-5-sonnet-20241022-v2:0"
-        assert client.client == mock_bedrock
-        
+        assert client.profile_name is None
         mock_boto3_client.assert_called_once_with(
             service_name="bedrock-runtime",
-            aws_access_key_id="test_access_key",
-            aws_secret_access_key="test_secret_key",
             region_name="us-east-1",
         )
     
-    def test_initialization_with_explicit_params(self, mock_boto3_client):
-        """Test initialization with explicitly provided parameters."""
-        mock_bedrock = Mock()
-        mock_boto3_client.return_value = mock_bedrock
-        
-        client = BedrockClient(
-            aws_access_key_id="explicit_key",
-            aws_secret_access_key="explicit_secret",
-            region_name="us-west-2",
-            model_id="custom-model-id",
-        )
-        
-        assert client.aws_access_key_id == "explicit_key"
-        assert client.aws_secret_access_key == "explicit_secret"
-        assert client.region_name == "us-west-2"
-        assert client.model_id == "custom-model-id"
-    
-    def test_initialization_without_credentials(self, mock_boto3_client):
-        """Test that initialization fails without AWS credentials."""
-        with pytest.raises(BedrockClientError) as exc_info:
-            BedrockClient()
-        
-        assert "AWS credentials not provided" in str(exc_info.value)
-    
-    def test_initialization_boto3_error(self, mock_aws_credentials, mock_boto3_client):
-        """Test initialization handles boto3 client creation errors."""
-        mock_boto3_client.side_effect = Exception("Boto3 initialization failed")
+    def test_initialization_boto3_error(self, mock_aws_profile, mock_boto3_session):
+        """Test initialization handles boto3 session creation errors."""
+        mock_boto3_session.side_effect = Exception("Boto3 initialization failed")
         
         with pytest.raises(BedrockClientError) as exc_info:
             BedrockClient()
@@ -225,10 +242,12 @@ class TestBedrockClientStream:
     """Tests for BedrockClient.stream method."""
     
     @pytest.fixture
-    def client(self, mock_aws_credentials, mock_boto3_client):
+    def client(self, mock_aws_profile, mock_boto3_session):
         """Create a BedrockClient instance with mocked boto3."""
         mock_bedrock = Mock()
-        mock_boto3_client.return_value = mock_bedrock
+        mock_session_instance = Mock()
+        mock_session_instance.client.return_value = mock_bedrock
+        mock_boto3_session.return_value = mock_session_instance
         return BedrockClient()
     
     def test_stream_success(self, client):

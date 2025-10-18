@@ -121,10 +121,11 @@ export interface Paper {
 export interface PaperListItem {
   research_id: string;
   question: string;
-  completed_at: string;
-  final_quality_score: number;
-  total_iterations: number;
-  stop_reason: string;
+  completed_at?: string;
+  quality_score?: number;
+  iterations?: number;
+  stop_reason?: string;
+  sources_count?: number;
 }
 
 export interface StreamEvent {
