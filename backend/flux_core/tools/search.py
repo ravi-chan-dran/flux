@@ -172,7 +172,18 @@ def search_tavily(query: str, limit: int = 10) -> list[dict[str, Any]]:
         return []
     
     try:
-        logger.info(f"Searching Tavily for: {query} (limit: {limit})")
+        # Truncate query if too long (Tavily has query length limits)
+        # Extract key terms from long queries
+        if len(query) > 500:
+            # Split by sentences and take first few meaningful parts
+            sentences = query.split('. ')
+            truncated_query = '. '.join(sentences[:3])  # Take first 3 sentences
+            if len(truncated_query) > 500:
+                truncated_query = truncated_query[:500]
+            logger.info(f"Query too long ({len(query)} chars), truncated to: {truncated_query[:100]}...")
+            query = truncated_query
+        
+        logger.info(f"Searching Tavily for: {query[:100]}... (limit: {limit})")
         
         client = TavilyClient(api_key=api_key)
         response = client.search(query, max_results=limit)
@@ -198,6 +209,16 @@ def search_tavily(query: str, limit: int = 10) -> list[dict[str, Any]]:
     except Exception as e:
         error_msg = f"Tavily search failed: {str(e)}"
         logger.error(error_msg)
+        
+        # Log additional details for debugging
+        if "400" in str(e):
+            logger.error(f"Bad Request - Query length: {len(query)}, Query preview: {query[:200]}...")
+            logger.error("This might be due to query length limits or invalid characters")
+        elif "401" in str(e):
+            logger.error("Unauthorized - Check TAVILY_API_KEY")
+        elif "429" in str(e):
+            logger.error("Rate limited - Too many requests")
+        
         raise SearchError(error_msg) from e
 
 
@@ -258,6 +279,22 @@ def multi_source_search(query: str, limit: int = 10) -> list[dict[str, Any]]:
         except SearchError as e:
             logger.error(f"Tavily search failed: {e}")
             sources_failed.append("tavily")
+            
+            # Try with a simplified query as fallback
+            try:
+                # Extract key terms from the original query
+                simplified_query = query.split('\n')[0]  # Take first line
+                if len(simplified_query) > 200:
+                    simplified_query = simplified_query[:200]
+                logger.info(f"Trying Tavily with simplified query: {simplified_query[:100]}...")
+                
+                tavily_fallback_results = search_tavily(simplified_query, limit=per_source_limit)
+                all_results.extend(tavily_fallback_results)
+                sources_used.append("tavily_fallback")
+                logger.info(f"Added {len(tavily_fallback_results)} results from Tavily (fallback)")
+            except SearchError as fallback_e:
+                logger.error(f"Tavily fallback also failed: {fallback_e}")
+                sources_failed.append("tavily_fallback")
     
     if not all_results:
         logger.warning("No results from any source")

@@ -253,7 +253,7 @@ Return refined experiments in the same JSON format."""
         return [
             {
                 "hypothesis_id": hyp.get("id", f"h{i+1}"),
-                "method": f"Design experimental method to test: {hyp.get('text', 'hypothesis')[:100]}",
+                "method": f"Design experimental method to test: {str(hyp.get('text', 'hypothesis'))[:100]}",
                 "measurements": "Define data collection procedures",
                 "success_criteria": "Establish validation criteria",
                 "time_estimate": "Estimate required",
@@ -279,8 +279,9 @@ Return refined experiments in the same JSON format."""
         
         formatted = []
         for exp in experiments:
+            method = str(exp.get('method', 'N/A'))
             formatted.append(
-                f"- {exp.get('hypothesis_id', '?')}: {exp.get('method', 'N/A')[:200]}"
+                f"- {exp.get('hypothesis_id', '?')}: {method[:200]}"
             )
         return "\n".join(formatted)
     

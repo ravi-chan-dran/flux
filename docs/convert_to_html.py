@@ -4,6 +4,7 @@ Convert markdown documentation files to HTML with Mermaid support.
 """
 
 import os
+import json
 from pathlib import Path
 
 # HTML template with Mermaid support
@@ -119,45 +120,38 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             }}
         }});
 
-        // Load and render markdown
-        fetch('{md_file}')
-            .then(response => response.text())
-            .then(markdown => {{
-                // Parse markdown to HTML
-                const html = marked.parse(markdown);
-                
-                // Replace mermaid code blocks with divs
-                const processed = html.replace(
-                    /<pre><code class="language-mermaid">(.*?)<\\/code><\\/pre>/gs,
-                    '<div class="mermaid">$1</div>'
-                );
-                
-                document.getElementById('content').innerHTML = processed;
-                
-                // Render mermaid diagrams
-                mermaid.run({{
-                    querySelector: '.mermaid'
-                }});
-                
-                // Smooth scroll for anchor links
-                document.querySelectorAll('a[href^="#"]').forEach(anchor => {{
-                    anchor.addEventListener('click', function (e) {{
-                        e.preventDefault();
-                        const target = document.querySelector(this.getAttribute('href'));
-                        if (target) {{
-                            target.scrollIntoView({{
-                                behavior: 'smooth',
-                                block: 'start'
-                            }});
-                        }}
+        // Render embedded markdown
+        const markdown = {markdown_json};
+        
+        // Parse markdown to HTML
+        const html = marked.parse(markdown);
+        
+        // Replace mermaid code blocks with divs
+        const processed = html.replace(
+            /<pre><code class="language-mermaid">(.*?)<\\/code><\\/pre>/gs,
+            '<div class="mermaid">$1</div>'
+        );
+        
+        document.getElementById('content').innerHTML = processed;
+        
+        // Render mermaid diagrams
+        mermaid.run({{
+            querySelector: '.mermaid'
+        }});
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {{
+            anchor.addEventListener('click', function (e) {{
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {{
+                    target.scrollIntoView({{
+                        behavior: 'smooth',
+                        block: 'start'
                     }});
-                }});
-            }})
-            .catch(error => {{
-                console.error('Error loading markdown:', error);
-                document.getElementById('content').innerHTML = 
-                    '<div class="card"><h2>Error Loading Documentation</h2><p>Failed to load the markdown file. Please check the console for details.</p></div>';
+                }}
             }});
+        }});
     </script>
 </body>
 </html>
@@ -185,10 +179,14 @@ def convert_markdown_to_html(md_file: Path, docs_dir: Path):
         'feat_active': 'active' if filename == 'FEATURES' else '',
     }
     
-    # Generate HTML
+    # Escape markdown content for JavaScript JSON
+    markdown_json = json.dumps(md_content)
+    
+    # Generate HTML with embedded markdown
     html_content = HTML_TEMPLATE.format(
         title=title,
         md_file=md_file.name,
+        markdown_json=markdown_json,
         **nav_active
     )
     

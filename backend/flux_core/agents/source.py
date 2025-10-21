@@ -226,7 +226,8 @@ Be specific and reference the sources. Identify patterns and gaps."""
             title = source.get("title", "Untitled")
             authors = source.get("authors", [])
             year = source.get("year", "N/A")
-            abstract = source.get("abstract", source.get("content", ""))[:300]
+            abstract_raw = source.get("abstract", source.get("content", ""))
+            abstract = str(abstract_raw)[:300] if abstract_raw else ""
             url = source.get("url", "")
             source_type = source.get("source_type", "unknown")
             

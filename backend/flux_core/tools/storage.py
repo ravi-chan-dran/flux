@@ -80,12 +80,16 @@ async def save_paper(research_id: str, state: dict[str, Any]) -> dict[str, Path]
         messages = state.get("messages", [])
         
         # Create metadata
+        # Note: iteration is 0-indexed, so add 1 for display (iteration 0 = 1 iteration completed)
+        iteration_count = state.get("iteration", 0)
+        total_iterations = iteration_count + 1 if iteration_count >= 0 else 0
+        
         metadata = {
             "research_id": research_id,
             "question": state.get("question", ""),
             "started_at": state.get("started_at"),
             "completed_at": datetime.utcnow().isoformat(),
-            "total_iterations": state.get("iteration", 0),
+            "total_iterations": total_iterations,
             "final_quality_score": state.get("quality_score", 0.0),
             "quality_history": state.get("quality_history", []),
             "stop_reason": state.get("stop_reason", ""),

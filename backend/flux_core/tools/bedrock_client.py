@@ -55,6 +55,11 @@ class BedrockClient:
             "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
         )
         
+        # Track token usage and cost
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.total_cost = 0.0
+        
         # Initialize boto3 client
         try:
             # Create session with profile if specified
@@ -152,11 +157,23 @@ class BedrockClient:
                 if "content" in response_body and len(response_body["content"]) > 0:
                     text = response_body["content"][0]["text"]
                     
-                    # Log usage metrics
+                    # Track usage metrics
                     usage = response_body.get("usage", {})
                     input_tokens = usage.get("input_tokens", 0)
                     output_tokens = usage.get("output_tokens", 0)
-                    logger.info(f"Tokens used: {input_tokens} input, {output_tokens} output")
+                    
+                    # Update cumulative tracking
+                    self.total_input_tokens += input_tokens
+                    self.total_output_tokens += output_tokens
+                    
+                    # Calculate cost (Claude 3.5 Sonnet pricing)
+                    # Input: $3 per 1M tokens, Output: $15 per 1M tokens
+                    input_cost = (input_tokens / 1_000_000) * 3.0
+                    output_cost = (output_tokens / 1_000_000) * 15.0
+                    invocation_cost = input_cost + output_cost
+                    self.total_cost += invocation_cost
+                    
+                    logger.info(f"Tokens used: {input_tokens} input, {output_tokens} output (${invocation_cost:.4f})")
                     
                     # Success! Return the result
                     if attempt > 0:
@@ -203,6 +220,26 @@ class BedrockClient:
         
         # Should never reach here, but just in case
         raise BedrockClientError(f"Max retries ({max_retries}) exceeded for model invocation")
+    
+    def get_usage_stats(self) -> dict[str, Any]:
+        """
+        Get current token usage and cost statistics.
+        
+        Returns:
+            Dictionary with token and cost stats
+        """
+        return {
+            "total_input_tokens": self.total_input_tokens,
+            "total_output_tokens": self.total_output_tokens,
+            "total_tokens": self.total_input_tokens + self.total_output_tokens,
+            "total_cost": self.total_cost,
+        }
+    
+    def reset_usage_stats(self):
+        """Reset token usage and cost tracking."""
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.total_cost = 0.0
     
     def stream(
         self,

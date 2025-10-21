@@ -293,7 +293,7 @@ Sources consulted are listed in the research materials.
             authors = s.get("authors", [])
             year = s.get("year", "n.d.")
             url = s.get("url", "")
-            abstract = s.get("abstract", "")[:200]
+            abstract = str(s.get("abstract", ""))[:200] if s.get("abstract") else ""
             source_type = s.get("source_type", "unknown")
             
             authors_str = ", ".join(authors[:2]) if authors else "Unknown"

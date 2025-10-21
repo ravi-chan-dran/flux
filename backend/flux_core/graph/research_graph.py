@@ -29,6 +29,25 @@ filter_agent = FilterAgent()
 confluence_agent = ConfluenceAgent()
 
 
+# Helper function to update state with token usage
+
+def update_state_with_usage(state: ResearchState, agent: Any) -> None:
+    """
+    Update state with token usage and cost from an agent's bedrock client.
+    
+    Args:
+        state: Research state to update
+        agent: Agent instance with bedrock_client
+    """
+    try:
+        stats = agent.get_usage_stats()
+        state["total_tokens_used"] = stats.get("total_tokens", 0)
+        state["total_cost"] = stats.get("total_cost", 0.0)
+        logger.debug(f"Updated state: {stats['total_tokens']} tokens, ${stats['total_cost']:.4f}")
+    except Exception as e:
+        logger.warning(f"Failed to update usage stats: {e}")
+
+
 # Agent wrapper functions that update state
 
 async def flow_master_node(state: ResearchState) -> ResearchState:
@@ -92,6 +111,9 @@ async def current_node(state: ResearchState) -> ResearchState:
             iteration=iteration,
         )
         
+        # Update token usage and cost
+        update_state_with_usage(state, current_agent)
+        
         # Update state
         state["hypotheses"] = hypotheses
         state["phase"] = "hypotheses"
@@ -139,6 +161,9 @@ async def source_node(state: ResearchState) -> ResearchState:
             iteration=iteration,
             limit=10,
         )
+        
+        # Update token usage and cost
+        update_state_with_usage(state, source_agent)
         
         # Update state
         state["sources"] = research.get("sources", [])
@@ -194,6 +219,9 @@ async def channel_node(state: ResearchState) -> ResearchState:
             context=context,
         )
         
+        # Update token usage and cost
+        update_state_with_usage(state, channel_agent)
+        
         # Update state
         state["experiments"] = experiments
         state["phase"] = "experiments"
@@ -231,6 +259,9 @@ async def filter_node(state: ResearchState) -> ResearchState:
         # Review research
         critique = await filter_agent.review(state)
         
+        # Update token usage and cost
+        update_state_with_usage(state, filter_agent)
+        
         # Update quality score
         quality_score = critique.get("quality_score", 5.0)
         update_quality_score(state, quality_score)
@@ -261,7 +292,7 @@ async def filter_node(state: ResearchState) -> ResearchState:
         return state
     
     except Exception as e:
-        logger.error(f"🛡️ The Filter error: {e}")
+        logger.error(f"🛡️ The Filter error: {e}", exc_info=True)
         state["phase"] = "critique"
         state["should_iterate"] = False
         state["stop_reason"] = "error_in_filter"
@@ -283,6 +314,9 @@ async def confluence_node(state: ResearchState) -> ResearchState:
     try:
         # Write paper
         paper = await confluence_agent.write_paper(state)
+        
+        # Update token usage and cost
+        update_state_with_usage(state, confluence_agent)
         
         # Update state
         state["paper_draft"] = paper

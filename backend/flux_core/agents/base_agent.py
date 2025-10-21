@@ -58,6 +58,15 @@ class BaseAgent(ABC):
         # Conversation history for this agent
         self.conversation_history: list[dict[str, Any]] = []
     
+    def get_usage_stats(self) -> dict[str, Any]:
+        """
+        Get current token usage and cost statistics from the bedrock client.
+        
+        Returns:
+            Dictionary with token and cost stats
+        """
+        return self.bedrock_client.get_usage_stats()
+    
     async def invoke_model(
         self,
         prompt: str,

@@ -385,8 +385,10 @@ Be direct and constructive. Identify which components need improvement."""
         formatted = []
         for exp in experiments:
             hyp_id = exp.get("hypothesis_id", "?")
-            method = exp.get("method", "N/A")[:150]
-            formatted.append(f"- {hyp_id}: {method}...")
+            method = exp.get("method", "N/A")
+            # Ensure method is a string before slicing
+            method_str = str(method) if method is not None else "N/A"
+            formatted.append(f"- {hyp_id}: {method_str[:150]}...")
         
         return "\n".join(formatted)
 
